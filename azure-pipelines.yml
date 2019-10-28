@@ -64,32 +64,37 @@ jobs:
       assets: |
           $(Build.ArtifactStagingDirectory)/*.tar.xz
 
-- job: "GCC_Multilib"
-  displayName: "RV64 GCC (Multilib)"
+- job: "GCC_Multilib_Baremetal"
+  displayName: "RV64 GCC (Multilib Baremetal)"
   condition: false
   pool:
     vmImage: "ubuntu-16.04"
   timeoutInMinutes: 360
   steps:
   - bash: |
-      # Dependencies as listed at
-      # https://github.com/riscv/riscv-gnu-toolchain
-      sudo apt-get install -y autoconf automake autotools-dev curl \
-        libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison \
-        flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev
+      sudo apt-get install -y build-essential autoconf bison flex \
+        texinfo help2man gawk libtool-bin libncurses5-dev git libtool \
+        gettext wget curl
     displayName: 'Install build dependencies'
 
   - bash: |
-      sudo mkdir -p /tools/riscv \
-        && sudo chmod 777 /tools/riscv \
-        && ./build-gcc-multilib.sh
+      ./install-crosstool-ng.sh
+    displayName: 'Build and install crosstool-ng'
+
+  - bash: |
+      # crosstools-NG needs the ability to create and chmod the
+      # /opt/riscv-baremetal-toolchain directory.
+      sudo mkdir -p /opt \
+        && sudo chmod 777 /opt \
+        && mkdir -p /opt/riscv-baremetal-toolchain \
+        && ./build-gcc-multilib-baremetal.sh
     displayName: 'Build GCC toolchain'
     env:
       ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
 
   - publish: $(Build.ArtifactStagingDirectory)
-    artifact: gcc-multilib
-    displayName: "Upload multilib GCC builds as Azure artifact"
+    artifact: gcc-multilib-baremetal
+    displayName: "Upload GCC for Multilib Baremetal as Azure artifact"
 
   - task: GithubRelease@0
     displayName: 'Upload to GitHub releases'
