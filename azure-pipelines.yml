@@ -82,12 +82,10 @@ jobs:
     displayName: 'Build and install crosstool-ng'
 
   - bash: |
-      # crosstools-NG needs the ability to create and chmod the
-      # /opt/riscv-baremetal-toolchain directory.
-      sudo mkdir -p /opt \
-        && sudo chmod 777 /opt \
-        && mkdir -p /opt/riscv-baremetal-toolchain \
-        && ./build-gcc-multilib-baremetal.sh
+      ./build-gcc-with-args.sh \
+        "lowrisc-toolchain-gcc-multilib-baremetal" \
+        "riscv64-unknown-elf" \
+        "/opt/riscv-baremetal-toolchain"
     displayName: 'Build GCC toolchain'
     env:
       ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
