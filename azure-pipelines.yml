@@ -107,3 +107,46 @@ jobs:
       assetUploadMode: replace
       assets: |
           $(Build.ArtifactStagingDirectory)/*.tar.xz
+
+- job: "GCC_Multilib_Linux"
+  displayName: "RV64 GCC (Multilib Linux)"
+  pool:
+    vmImage: "ubuntu-16.04"
+  timeoutInMinutes: 360
+  steps:
+  - bash: |
+      sudo apt-get install -y build-essential autoconf bison flex \
+        texinfo help2man gawk libtool-bin libncurses5-dev git libtool \
+        gettext wget curl
+    displayName: 'Install build dependencies'
+
+  - bash: |
+      ./install-crosstool-ng.sh
+    displayName: 'Build and install crosstool-ng'
+
+  - bash: |
+      ./build-gcc-with-args.sh \
+        "lowrisc-toolchain-gcc-multilib-linux" \
+        "riscv64-unknown-linux-gnu" \
+        "/opt/riscv-linux-toolchain"
+    displayName: 'Build GCC toolchain'
+    env:
+      ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
+
+  - publish: $(Build.ArtifactStagingDirectory)
+    artifact: gcc-multilib-linux
+    displayName: "Upload GCC for Multilib Linux as Azure artifact"
+
+  - task: GithubRelease@0
+    displayName: 'Upload to GitHub releases'
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    inputs:
+      gitHubConnection: lowrisc-artifact-upload
+      repositoryName: lowrisc/lowrisc-toolchains
+      tagSource: manual
+      tag: "$(ReleaseTag)"
+      action: edit
+      addChangeLog: false
+      assetUploadMode: replace
+      assets: |
+          $(Build.ArtifactStagingDirectory)/*.tar.xz
