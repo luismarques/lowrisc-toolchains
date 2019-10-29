@@ -7,10 +7,13 @@
 #
 # Builds:
 # - GCC, using crosstool-ng and the .config files provided
+# - Qemu (userspace)
 #
 # Then:
 # - Adds a `buildinfo` file describing the configuration
 # - Creates a tar file of the whole install directory
+
+QEMU_VERSION=23967e5b2a6c6d04b8db766a8a149f3631a7b899 # v4.0.1
 
 set -e
 set -x
@@ -62,16 +65,55 @@ cat .config
 # Invoke crosstool-ng
 ct-ng build
 
+case "${toolchain_target}" in
+  riscv*-*-linux-gnu)
+    # Build Qemu when building a RISC-V linux toolchain
+
+    qemu_dir="${build_top_dir}/build/qemu"
+
+    git clone https://git.qemu.org/git/qemu.git "${qemu_dir}"
+    cd "${qemu_dir}"
+
+    git checkout --force --recurse-submodules "${QEMU_VERSION}"
+
+    mkdir -p "${qemu_dir}/build"
+    cd "${qemu_dir}/build"
+
+    "${qemu_dir}/configure" \
+      "--prefix=${toolchain_dest}" \
+      "--interp-prefix=${toolchain_dest}/${toolchain_target}/sysroot" \
+      "--target-list=riscv64-linux-user,riscv32-linux-user,riscv64-softmmu,riscv32-softmmu"
+
+    make -j$(( $(nproc) + 2 ))
+    make -j$(( $(nproc) + 2 )) install
+
+    # Copy Qemu licenses into toolchain
+    mkdir -p "${toolchain_dest}/share/licenses/qemu"
+    cp "${qemu_dir}/LICENSE" "${toolchain_dest}/share/licenses/qemu"
+    cp "${qemu_dir}/COPYING" "${toolchain_dest}/share/licenses/qemu"
+    cp "${qemu_dir}/COPYING.LIB" "${toolchain_dest}/share/licenses/qemu"
+
+    cd "${build_top_dir}/build/gcc"
+  ;;
+esac
+
 ls -l "${toolchain_dest}"
 
 # Write out build info
 {
-  echo    "lowRISC toolchain config:  ${toolchain_name}";
-  echo    "lowRISC toolchain version: ${tag_name}";
-  echo -n "GCC Version:               ";
+  echo "lowRISC toolchain config:  ${toolchain_name}";
+  echo "lowRISC toolchain version: ${tag_name}";
+  echo "GCC Version:";
   "${toolchain_dest}/bin/${toolchain_target}-gcc" --version \
     | head -n1;
-  echo    "Built at $(date -u) on $(hostname)";
+
+  if [ -x "${toolchain_dest}/bin/qemu-riscv64" ]; then
+    echo "Qemu Version:";
+    "${toolchain_dest}/bin/qemu-riscv64" --version \
+      | head -n1;
+  fi
+
+  echo "Built at $(date -u) on $(hostname)";
 } >> "${toolchain_dest}/buildinfo"
 
 # Package up toolchain directory
