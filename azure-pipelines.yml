@@ -1,10 +1,6 @@
 # Azure Pipelines CI build configuration
 # Documentation at https://aka.ms/yaml
 
-variables:
-  # commit reference in https://github.com/riscv/riscv-gnu-toolchain
-  RISCV_GNU_TOOLCHAIN_COMMIT_ID: 2e334e222d43bcde237c289385c977dcab81eda9
-
 trigger:
   batch: true
   branches:
@@ -25,44 +21,20 @@ jobs:
     vmImage: "ubuntu-16.04"
   timeoutInMinutes: 360
   steps:
-  - bash: |
-      sudo apt-get install -y build-essential autoconf bison flex \
-        texinfo help2man gawk libtool-bin libncurses5-dev git libtool \
-        gettext wget curl
-    displayName: 'Install build dependencies'
+  - template: "_build-deps.yml"
 
   - bash: |
-      ./install-crosstool-ng.sh
-    displayName: 'Build and install crosstool-ng'
-
-  - bash: |
-      # crosstools-NG needs the ability to create and chmod the
-      # /tools/riscv directory.
-      sudo mkdir -p /tools \
-        && sudo chmod 777 /tools \
-        && mkdir -p /tools/riscv \
-        && ./build-gcc-ibex.sh
+      ./build-gcc-with-args.sh \
+        "lowrisc-toolchain-gcc-rv32imc" \
+        "riscv32-unknown-elf" \
+        "/tools/riscv"
     displayName: 'Build GCC toolchain'
     env:
       ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
 
-  - publish: $(Build.ArtifactStagingDirectory)
-    artifact: gcc-ibex
-    displayName: "Upload GCC for Ibex as Azure artifact"
-
-  - task: GithubRelease@0
-    displayName: 'Upload to GitHub releases'
-    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
-    inputs:
-      gitHubConnection: lowrisc-artifact-upload
-      repositoryName: lowrisc/lowrisc-toolchains
-      tagSource: manual
-      tag: "$(ReleaseTag)"
-      action: edit
-      addChangeLog: false
-      assetUploadMode: replace
-      assets: |
-          $(Build.ArtifactStagingDirectory)/*.tar.xz
+  - template: "_upload-artifacts.yml"
+    parameters:
+      azure_name: gcc-ibex
 
 - job: "GCC_Multilib_Baremetal"
   displayName: "RV64 GCC (Multilib Baremetal)"
@@ -71,15 +43,7 @@ jobs:
     vmImage: "ubuntu-16.04"
   timeoutInMinutes: 360
   steps:
-  - bash: |
-      sudo apt-get install -y build-essential autoconf bison flex \
-        texinfo help2man gawk libtool-bin libncurses5-dev git libtool \
-        gettext wget curl
-    displayName: 'Install build dependencies'
-
-  - bash: |
-      ./install-crosstool-ng.sh
-    displayName: 'Build and install crosstool-ng'
+  - template: "_build-deps.yml"
 
   - bash: |
       ./build-gcc-with-args.sh \
@@ -90,23 +54,9 @@ jobs:
     env:
       ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
 
-  - publish: $(Build.ArtifactStagingDirectory)
-    artifact: gcc-multilib-baremetal
-    displayName: "Upload GCC for Multilib Baremetal as Azure artifact"
-
-  - task: GithubRelease@0
-    displayName: 'Upload to GitHub releases'
-    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
-    inputs:
-      gitHubConnection: lowrisc-artifact-upload
-      repositoryName: lowrisc/lowrisc-toolchains
-      tagSource: manual
-      tag: "$(ReleaseTag)"
-      action: edit
-      addChangeLog: false
-      assetUploadMode: replace
-      assets: |
-          $(Build.ArtifactStagingDirectory)/*.tar.xz
+  - template: "_upload-artifacts.yml"
+    parameters:
+      azure_name: gcc-multilib-baremetal
 
 - job: "GCC_Multilib_Linux"
   displayName: "RV64 GCC (Multilib Linux)"
@@ -114,15 +64,7 @@ jobs:
     vmImage: "ubuntu-16.04"
   timeoutInMinutes: 360
   steps:
-  - bash: |
-      sudo apt-get install -y build-essential autoconf bison flex \
-        texinfo help2man gawk libtool-bin libncurses5-dev git libtool \
-        gettext wget curl
-    displayName: 'Install build dependencies'
-
-  - bash: |
-      ./install-crosstool-ng.sh
-    displayName: 'Build and install crosstool-ng'
+  - template: "_build-deps.yml"
 
   - bash: |
       ./build-gcc-with-args.sh \
@@ -133,20 +75,6 @@ jobs:
     env:
       ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
 
-  - publish: $(Build.ArtifactStagingDirectory)
-    artifact: gcc-multilib-linux
-    displayName: "Upload GCC for Multilib Linux as Azure artifact"
-
-  - task: GithubRelease@0
-    displayName: 'Upload to GitHub releases'
-    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
-    inputs:
-      gitHubConnection: lowrisc-artifact-upload
-      repositoryName: lowrisc/lowrisc-toolchains
-      tagSource: manual
-      tag: "$(ReleaseTag)"
-      action: edit
-      addChangeLog: false
-      assetUploadMode: replace
-      assets: |
-          $(Build.ArtifactStagingDirectory)/*.tar.xz
+  - template: "_upload-artifacts.yml"
+    parameters:
+      azure_name: gcc-multilib-linux
