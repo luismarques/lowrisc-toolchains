@@ -11,6 +11,7 @@
 #
 # Then:
 # - Adds a `buildinfo` file describing the configuration
+# - Adds cross-compilation configuration files for certain build systems
 # - Creates a tar file of the whole install directory
 
 QEMU_VERSION=23967e5b2a6c6d04b8db766a8a149f3631a7b899 # v4.0.1
@@ -96,6 +97,11 @@ case "${toolchain_target}" in
     cd "${build_top_dir}/build/gcc"
   ;;
 esac
+
+## Create Toolchain Files!
+# These don't yet add cflags ldflags
+"${build_top_dir}/generate-cmake-toolchain.sh" \
+  "${toolchain_target}" "${toolchain_dest}"
 
 ls -l "${toolchain_dest}"
 
