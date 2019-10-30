@@ -102,6 +102,8 @@ esac
 # These don't yet add cflags ldflags
 "${build_top_dir}/generate-cmake-toolchain.sh" \
   "${toolchain_target}" "${toolchain_dest}"
+"${build_top_dir}/generate-meson-cross-file.sh" \
+  "${toolchain_target}" "${toolchain_dest}"
 
 ls -l "${toolchain_dest}"
 
