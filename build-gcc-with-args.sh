@@ -20,8 +20,8 @@ set -e
 set -x
 set -o pipefail
 
-if ! [ "$#" -eq 3 ]; then
-  echo "Usage: $0 <config_name> <target> <dest_dir>"
+if ! [ "$#" -ge 3 ]; then
+  echo "Usage: $0 <config_name> <target> <dest_dir> <cflags...>"
   exit 2
 fi;
 
@@ -32,6 +32,8 @@ toolchain_name="${1}"
 toolchain_target="${2}"
 # This is the directory where we want the toolchain to be installed.
 toolchain_dest="${3}"
+# Remaining cflags for build configurations
+toolchain_cflags=("${@:4}")
 
 build_top_dir="${PWD}"
 
@@ -100,10 +102,10 @@ esac
 
 ## Create Toolchain Files!
 # These don't yet add cflags ldflags
-"${build_top_dir}/generate-cmake-toolchain.sh" \
-  "${toolchain_target}" "${toolchain_dest}"
-"${build_top_dir}/generate-meson-cross-file.sh" \
-  "${toolchain_target}" "${toolchain_dest}"
+"${build_top_dir}/generate-gcc-cmake-toolchain.sh" \
+  "${toolchain_target}" "${toolchain_dest}" "${toolchain_cflags[@]}"
+"${build_top_dir}/generate-gcc-meson-cross-file.sh" \
+  "${toolchain_target}" "${toolchain_dest}" "${toolchain_cflags[@]}"
 
 ls -l "${toolchain_dest}"
 

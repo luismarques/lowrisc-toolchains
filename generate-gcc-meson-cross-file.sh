@@ -3,9 +3,9 @@
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
 
-## generate-meson-cross-file.sh
+## generate-gcc-meson-cross-file.sh
 #
-# This generates a cross file for use when cross-compiling with meson.
+# This generates a cross file to configure meson for cross-compiling with GCC.
 #
 # Docs: https://mesonbuild.com/Cross-compilation.html
 
@@ -13,8 +13,8 @@ set -e
 set -x
 set -o pipefail
 
-if ! [ "$#" -eq 2 ]; then
-  echo "Usage: $0 <target> <prefix_dir>"
+if ! [ "$#" -ge 2 ]; then
+  echo "Usage: $0 <target> <prefix_dir> <cflags...>"
   exit 2
 fi;
 
@@ -23,8 +23,17 @@ fi;
 toolchain_target="${1}"
 # This is the directory where the toolchain has been installed.
 toolchain_dest="${2}"
+# Remaining cflags for build configurations
+toolchain_cflags=("${@:3}")
 
-# TODO: -march, -mabi, -mcmodel, -mcpu/-mtune Flags
+meson_cflags=""
+for flag in "${toolchain_cflags[@]}"; do
+  if [ -z "${meson_cflags}" ]; then
+    meson_cflags+="'${flag}'";
+  else
+    meson_cflags+=", '${flag}'"
+  fi
+done
 
 config_dest="${toolchain_dest}/meson-${toolchain_target}-gcc.txt"
 sysroot_config="";
@@ -59,6 +68,8 @@ strip = '${toolchain_dest}/bin/${toolchain_target}-strip'
 [properties]
 needs_exe_wrapper = true
 has_function_printf = false
+c_args = [${meson_cflags}]
+cpp_args = [${meson_cflags}]
 ${sysroot_config}
 
 [host_machine]

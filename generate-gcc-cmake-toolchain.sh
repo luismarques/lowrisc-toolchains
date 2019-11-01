@@ -3,10 +3,10 @@
 # Licensed under the Apache License, Version 2.0, see LICENSE for details.
 # SPDX-License-Identifier: Apache-2.0
 
-## generate-cmake-toolchain.sh
+## generate-gcc-cmake-toolchain.sh
 #
-# This generates a cmake-toolchains(7) file for use when cross-compiling with
-# CMake.
+# This generates a cmake-toolchains(7) file to configure CMake for
+# cross-compiling with GCC.
 #
 # Docs: https://cmake.org/cmake/help/v3.15/manual/cmake-toolchains.7.html
 
@@ -14,8 +14,8 @@ set -e
 set -x
 set -o pipefail
 
-if ! [ "$#" -eq 2 ]; then
-  echo "Usage: $0 <target> <prefix_dir>"
+if ! [ "$#" -ge 2 ]; then
+  echo "Usage: $0 <target> <prefix_dir> <cflags...>"
   exit 2
 fi;
 
@@ -24,8 +24,17 @@ fi;
 toolchain_target="${1}"
 # This is the directory where the toolchain has been installed.
 toolchain_dest="${2}"
+# Remaining cflags for build configurations
+toolchain_cflags=("${@:3}")
 
-# TODO: -march, -mabi, -mcmodel, -mcpu/-mtune Flags
+cmake_cflags=""
+for flag in "${toolchain_cflags[@]}"; do
+  if [ -z "${cmake_cflags}" ]; then
+    cmake_cflags+="${flag}";
+  else
+    cmake_cflags+=";${flag}"
+  fi
+done
 
 config_dest="${toolchain_dest}/${toolchain_target}-gcc.cmake"
 sysroot_config=""
@@ -61,14 +70,17 @@ ${sysroot_config}
 set(CMAKE_C_COMPILER "\${LOWRISC_TOOLCHAIN}/bin/${toolchain_target}-gcc" CACHE STRING "" FORCE)
 set(CMAKE_C_COMPILER_TARGET "${toolchain_target}" CACHE STRING "" FORCE)
 set(CMAKE_C_COMPILER_EXTERNAL_TOOLCHAIN "\${LOWRISC_TOOLCHAIN}" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS "${cmake_cflags}" CACHE STRING "" FORCE)
 
 set(CMAKE_CXX_COMPILER "\${LOWRISC_TOOLCHAIN}/bin/${toolchain_target}-g++" CACHE STRING "" FORCE)
 set(CMAKE_CXX_COMPILER_TARGET "${toolchain_target}" CACHE STRING "" FORCE)
 set(CMAKE_CXX_COMPILER_EXTERNAL_TOOLCHAIN "\${LOWRISC_TOOLCHAIN}" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS "${cmake_cflags}" CACHE STRING "" FORCE)
 
 set(CMAKE_ASM_COMPILER "\${LOWRISC_TOOLCHAIN}/bin/${toolchain_target}-as" CACHE STRING "" FORCE)
 set(CMAKE_ASM_COMPILER_TARGET "${toolchain_target}" CACHE STRING "" FORCE)
 set(CMAKE_ASM_COMPILER_EXTERNAL_TOOLCHAIN "\${LOWRISC_TOOLCHAIN}" CACHE STRING "" FORCE)
+set(CMAKE_ASM_FLAGS "${cmake_cflags}" CACHE STRING "" FORCE)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)

@@ -27,7 +27,8 @@ jobs:
       ./build-gcc-with-args.sh \
         "lowrisc-toolchain-gcc-rv32imc" \
         "riscv32-unknown-elf" \
-        "/tools/riscv"
+        "/tools/riscv" \
+        "-march=rv32imc" "-mabi=ilp32" "-mcmodel=medany"
     displayName: 'Build GCC toolchain'
     env:
       ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
