@@ -33,6 +33,16 @@ jobs:
     env:
       ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
 
+  - bash: |
+      ./build-clang-with-args.sh \
+        "lowrisc-toolchain-clang-rv32imc" \
+        "riscv32-unknown-elf" \
+        "/tools/riscv" \
+        "-march=rv32imc" "-mabi=ilp32" "-mcmodel=medany"
+    displayName: "Build Clang toolchain"
+    env:
+      ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
+
   - template: "_upload-artifacts.yml"
     parameters:
       azure_name: gcc-ibex
@@ -55,6 +65,15 @@ jobs:
     env:
       ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
 
+  - bash: |
+      ./build-clang-with-args.sh \
+        "lowrisc-toolchain-gcc-multilib-baremetal" \
+        "riscv64-unknown-elf" \
+        "/opt/riscv-baremetal-toolchain"
+    displayName: "Build Clang toolchain"
+    env:
+      ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
+
   - template: "_upload-artifacts.yml"
     parameters:
       azure_name: gcc-multilib-baremetal
@@ -73,6 +92,15 @@ jobs:
         "riscv64-unknown-linux-gnu" \
         "/opt/riscv-linux-toolchain"
     displayName: 'Build GCC toolchain'
+    env:
+      ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
+
+  - bash: |
+      ./build-clang-with-args.sh \
+        "lowrisc-toolchain-gcc-multilib-linux" \
+        "riscv64-unknown-linux-gnu" \
+        "/opt/riscv-linux-toolchain"
+    displayName: "Build Clang toolchain"
     env:
       ARTIFACT_STAGING_DIR: $(Build.ArtifactStagingDirectory)
 
