@@ -122,28 +122,49 @@ cp "${llvm_dir}/llvm/LICENSE.TXT" "${toolchain_dest}/share/licenses/llvm"
 ls -l "${toolchain_dest}"
 
 # Write out build info
+clang_version="$("${toolchain_dest}/bin/clang" --version | head -n1)"
+gcc_version="$("${toolchain_dest}/bin/${toolchain_target}-gcc" --version | head -n1)"
+build_date="$(date -u)"
+
+qemu_json=""
+qemu_version="<not installed>"
+if [ -x "${toolchain_dest}/bin/qemu-riscv64" ]; then
+  qemu_version="$("${toolchain_dest}/bin/qemu-riscv64" --version | head -n1)"
+  qemu_json="\"qemu_version\":\"${qemu_version}\","
+fi
+
+tee "${toolchain_dest}/buildinfo" <<BUILDINFO
+Report toolchain bugs to toolchains@lowrisc.org (include this file)
+
+lowRISC toolchain config:  ${toolchain_name}
+lowRISC toolchain version: ${tag_name}
+
+Clang version:
+  ${clang_version}
+
+GCC version:
+  ${gcc_version}
+
+Qemu version:
+  ${qemu_version}
+
+C Flags:
+  ${toolchain_cflags[@]}
+
+Built at ${build_date} on $(hostname)
+BUILDINFO
+
+tee "${toolchain_dest}/buildinfo.json" <<BUILDINFO_JSON
 {
-  echo "lowRISC toolchain config:  ${toolchain_name}";
-  echo "lowRISC toolchain version: ${tag_name}";
-
-  echo "Clang version:"
-  "${toolchain_dest}/bin/clang" --version \
-    | head -n1;
-
-  echo "GCC Version:";
-  "${toolchain_dest}/bin/${toolchain_target}-gcc" --version \
-    | head -n1;
-
-  if [ -x "${toolchain_dest}/bin/qemu-riscv64" ]; then
-    echo "Qemu Version:";
-    "${toolchain_dest}/bin/qemu-riscv64" --version \
-      | head -n1;
-  fi
-
-  echo "Built at $(date -u) on $(hostname)";
-  echo ""
-  echo "Report Bugs to: toolchains@lowrisc.org (include this file)"
-} > "${toolchain_dest}/buildinfo"
+  "toolchain_config":"${toolchain_name}",
+  "version": "${tag_name}",
+  "clang_version": "${clang_version}",
+  "gcc_version": "${gcc_version}",
+  ${qemu_json}
+  "build_date": "${build_date}",
+  "build_host": "$(hostname)"
+}
+BUILDINFO_JSON
 
 # Package up toolchain directory
 tar -cJ \
