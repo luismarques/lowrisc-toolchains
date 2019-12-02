@@ -14,8 +14,6 @@
 # - Adds cross-compilation configuration files for certain build systems
 # - Creates a tar file of the whole install directory
 
-QEMU_VERSION=23967e5b2a6c6d04b8db766a8a149f3631a7b899 # v4.0.1
-
 set -e
 set -x
 set -o pipefail
@@ -36,6 +34,10 @@ toolchain_dest="${3}"
 toolchain_cflags=("${@:4}")
 
 build_top_dir="${PWD}"
+
+# For *_VERSION variables
+# shellcheck source=sw-versions.sh
+source "${build_top_dir}/sw-versions.sh"
 
 tag_name="$(git -C "${build_top_dir}" describe --always)"
 set +x

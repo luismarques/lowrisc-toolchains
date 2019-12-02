@@ -15,9 +15,6 @@
 # - Adds cross-compilation configuration files for certain build systems
 # - Creates a tar file of the whole install directory
 
-# master 2010-10-31
-LLVM_VERSION=a5f7bc0de72f1c631ef13d2cccf2b77c9a030e7d
-
 set -e
 set -x
 set -o pipefail
@@ -40,6 +37,10 @@ toolchain_dest="${3}"
 toolchain_cflags=("${@:4}")
 
 build_top_dir="${PWD}"
+
+# For *_VERSION variables
+# shellcheck source=sw-versions.sh
+source "${build_top_dir}/sw-versions.sh"
 
 # Fixup toolchain_name in case it includes `gcc`
 case "${toolchain_name}" in
