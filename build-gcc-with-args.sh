@@ -70,37 +70,40 @@ cat .config
 # Invoke crosstool-ng
 ct-ng build
 
+# Build Qemu when building a RISC-V linux toolchain
+qemu_dir="${build_top_dir}/build/qemu"
+
+qemu_prefix_arg=""
 case "${toolchain_target}" in
-  riscv*-*-linux-gnu)
-    # Build Qemu when building a RISC-V linux toolchain
-
-    qemu_dir="${build_top_dir}/build/qemu"
-
-    git clone https://git.qemu.org/git/qemu.git "${qemu_dir}"
-    cd "${qemu_dir}"
-
-    git checkout --force --recurse-submodules "${QEMU_VERSION}"
-
-    mkdir -p "${qemu_dir}/build"
-    cd "${qemu_dir}/build"
-
-    "${qemu_dir}/configure" \
-      "--prefix=${toolchain_dest}" \
-      "--interp-prefix=${toolchain_dest}/${toolchain_target}/sysroot" \
-      "--target-list=riscv64-linux-user,riscv32-linux-user,riscv64-softmmu,riscv32-softmmu"
-
-    make -j$(( $(nproc) + 2 ))
-    make -j$(( $(nproc) + 2 )) install
-
-    # Copy Qemu licenses into toolchain
-    mkdir -p "${toolchain_dest}/share/licenses/qemu"
-    cp "${qemu_dir}/LICENSE" "${toolchain_dest}/share/licenses/qemu"
-    cp "${qemu_dir}/COPYING" "${toolchain_dest}/share/licenses/qemu"
-    cp "${qemu_dir}/COPYING.LIB" "${toolchain_dest}/share/licenses/qemu"
-
-    cd "${build_top_dir}/build/gcc"
+  riscv*-linux-gnu)
+    qemu_prefix_arg="--interp-prefix=${toolchain_dest}/${toolchain_target}/sysroot"
   ;;
 esac
+
+git clone https://git.qemu.org/git/qemu.git "${qemu_dir}"
+cd "${qemu_dir}"
+
+git checkout --force --recurse-submodules "${QEMU_VERSION}"
+
+mkdir -p "${qemu_dir}/build"
+cd "${qemu_dir}/build"
+
+# shellcheck disable=SC2086
+"${qemu_dir}/configure" \
+  "--prefix=${toolchain_dest}" \
+  ${qemu_prefix_arg} \
+  "--target-list=riscv64-softmmu,riscv32-softmmu,riscv64-linux-user,riscv32-linux-user"
+
+make -j$(( $(nproc) + 2 ))
+make -j$(( $(nproc) + 2 )) install
+
+# Copy Qemu licenses into toolchain
+mkdir -p "${toolchain_dest}/share/licenses/qemu"
+cp "${qemu_dir}/LICENSE" "${toolchain_dest}/share/licenses/qemu"
+cp "${qemu_dir}/COPYING" "${toolchain_dest}/share/licenses/qemu"
+cp "${qemu_dir}/COPYING.LIB" "${toolchain_dest}/share/licenses/qemu"
+
+cd "${build_top_dir}/build/gcc"
 
 ## Create Toolchain Files!
 # These don't yet add cflags ldflags
@@ -112,15 +115,12 @@ esac
 ls -l "${toolchain_dest}"
 
 # Write out build info
-gcc_version="$("${toolchain_dest}/bin/${toolchain_target}-gcc" --version | head -n1)"
+set +o pipefail # head causes pipe failures, so we have to switch off pipefail while we use it.
+ct_ng_version_string="$(ct-ng version | head -n1)"
+gcc_version_string="$("${toolchain_dest}/bin/${toolchain_target}-gcc" --version | head -n1)"
+qemu_version_string="$("${toolchain_dest}/bin/qemu-riscv64" --version | head -n1)"
 build_date="$(date -u)"
-
-qemu_json=""
-qemu_version="<not installed>"
-if [ -x "${toolchain_dest}/bin/qemu-riscv64" ]; then
-  qemu_version="$("${toolchain_dest}/bin/qemu-riscv64" --version | head -n1)"
-  qemu_json="\"qemu_version\":\"${qemu_version}\","
-fi
+set -o pipefail
 
 tee "${toolchain_dest}/buildinfo" <<BUILDINFO
 Report toolchain bugs to toolchains@lowrisc.org (include this file)
@@ -129,10 +129,15 @@ lowRISC toolchain config:  ${toolchain_name}
 lowRISC toolchain version: ${tag_name}
 
 GCC version:
-  ${gcc_version}
+  ${gcc_version_string}
 
 Qemu version:
-  ${qemu_version}
+  ${qemu_version_string}
+  (git: ${QEMU_VERSION})
+
+Crosstool-ng version:
+  ${ct_ng_version_string}
+  (git: ${CROSSTOOL_NG_VERSION})
 
 C Flags:
   ${toolchain_cflags[@]}
@@ -142,10 +147,13 @@ BUILDINFO
 
 tee "${toolchain_dest}/buildinfo.json" <<BUILDINFO_JSON
 {
-  "toolchain_config":"${toolchain_name}",
+  "toolchain_config": "${toolchain_name}",
   "version": "${tag_name}",
-  "gcc_version": "${gcc_version}",
-  ${qemu_json}
+  "gcc_version": "${gcc_version_string}",
+  "qemu_version": "${qemu_version_string}",
+  "qemu_git": "${QEMU_VERSION}",
+  "crosstool-ng_version": "${ct_ng_version_string}",
+  "crosstool-ng_git": "${CROSSTOOL_NG_VERSION}",
   "build_date": "${build_date}",
   "build_host": "$(hostname)"
 }

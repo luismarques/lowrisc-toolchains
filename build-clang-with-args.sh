@@ -84,7 +84,7 @@ cmake "${llvm_dir}/llvm" \
   -DCMAKE_CXX_COMPILER="/usr/bin/clang++-6.0" \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX="${toolchain_dest}" \
-  -DLLVM_TARGETS_TO_BUILD="host;RISCV" \
+  -DLLVM_TARGETS_TO_BUILD="RISCV" \
   -DLLVM_ENABLE_PROJECTS="clang;lld;clang-tools-extra" \
   -DLLVM_ENABLE_LLD=On \
   -DLLVM_ENABLE_BACKTRACES=Off \
@@ -123,16 +123,13 @@ cp "${llvm_dir}/llvm/LICENSE.TXT" "${toolchain_dest}/share/licenses/llvm"
 ls -l "${toolchain_dest}"
 
 # Write out build info
-clang_version="$("${toolchain_dest}/bin/clang" --version | head -n1)"
-gcc_version="$("${toolchain_dest}/bin/${toolchain_target}-gcc" --version | head -n1)"
+set +o pipefail # head causes pipe failures, so we have to switch off pipefail while we use it.
+ct_ng_version_string="$( (set +o pipefail; ct-ng version | head -n1) )"
+clang_version_string="$("${toolchain_dest}/bin/clang" --version | head -n1)"
+gcc_version_string="$("${toolchain_dest}/bin/${toolchain_target}-gcc" --version | head -n1)"
+qemu_version_string="$("${toolchain_dest}/bin/qemu-riscv64" --version | head -n1)"
 build_date="$(date -u)"
-
-qemu_json=""
-qemu_version="<not installed>"
-if [ -x "${toolchain_dest}/bin/qemu-riscv64" ]; then
-  qemu_version="$("${toolchain_dest}/bin/qemu-riscv64" --version | head -n1)"
-  qemu_json="\"qemu_version\":\"${qemu_version}\","
-fi
+set -o pipefail
 
 tee "${toolchain_dest}/buildinfo" <<BUILDINFO
 Report toolchain bugs to toolchains@lowrisc.org (include this file)
@@ -141,13 +138,19 @@ lowRISC toolchain config:  ${toolchain_name}
 lowRISC toolchain version: ${tag_name}
 
 Clang version:
-  ${clang_version}
+  ${clang_version_string}
+  (git: ${LLVM_VERSION})
 
 GCC version:
-  ${gcc_version}
+  ${gcc_version_string}
 
 Qemu version:
-  ${qemu_version}
+  ${qemu_version_string}
+  (git: ${QEMU_VERSION})
+
+Crosstool-ng version:
+  ${ct_ng_version_string}
+  (git: ${CROSSTOOL_NG_VERSION})
 
 C Flags:
   ${toolchain_cflags[@]}
@@ -157,11 +160,15 @@ BUILDINFO
 
 tee "${toolchain_dest}/buildinfo.json" <<BUILDINFO_JSON
 {
-  "toolchain_config":"${toolchain_name}",
+  "toolchain_config": "${toolchain_name}",
   "version": "${tag_name}",
-  "clang_version": "${clang_version}",
-  "gcc_version": "${gcc_version}",
-  ${qemu_json}
+  "clang_version": "${clang_version_string}",
+  "clang_git": "${LLVM_VERSION}",
+  "gcc_version": "${gcc_version_string}",
+  "qemu_version": "${qemu_version_string}",
+  "qemu_git": "${QEMU_VERSION}",
+  "crosstool-ng_version": "${ct_ng_version_string}",
+  "crosstool-ng_git": "${CROSSTOOL_NG_VERSION}",
   "build_date": "${build_date}",
   "build_host": "$(hostname)"
 }

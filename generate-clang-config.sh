@@ -31,6 +31,6 @@ tee "${config_dest}" <<CONFIG
 # Problems? Bug reporting instructions in ${toolchain_dest}/buildinfo
 
 # Target
--target=${toolchain_target}
+--target=${toolchain_target}
 
 CONFIG
