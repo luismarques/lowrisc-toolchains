@@ -49,8 +49,8 @@ toolchain_full_name="${toolchain_name}-${tag_name}"
 
 # crosstools-NG needs the ability to create and chmod the
 # $toolchain_dest directory.
-sudo mkdir -p "$(dirname "${toolchain_dest}")"
-sudo chmod 777 "$(dirname "${toolchain_dest}")"
+#sudo mkdir -p "$(dirname "${toolchain_dest}")"
+chmod 777 "$(dirname "${toolchain_dest}")"
 
 mkdir -p "${toolchain_dest}"
 

@@ -12,4 +12,4 @@ export QEMU_VERSION=23967e5b2a6c6d04b8db766a8a149f3631a7b899
 # LLVM 13.0.1 plus hardening patches
 export LLVM_URL=https://github.com/lowRISC/llvm-project.git
 export LLVM_BRANCH=ot-hardening
-export LLVM_VERSION=a394a9fbd5afce53873e74455a948db9bb63839c
+export LLVM_VERSION=aa80613d62f7019561749657d9a8d24b8d9dbffe
