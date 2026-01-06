@@ -2,14 +2,15 @@
 
 # This documents the versions of any software checked out from git
 
-# LLVM 16.0.2 plus:
-# - hardening patches
+# LLVM 21.1.8 plus:
+# - jump guards
 # - unratified bitmanip extensions
-# - `.option arch` assembly directive
-# - single-byte code coverage
+# - `.option arch` with optional 0p93 suffix
+# - fix single byte counters for elided branches
+# - revert D151768
 export LLVM_URL=https://github.com/lowRISC/llvm-project.git
-export LLVM_BRANCH=ot-llvm-16-hardening
-export LLVM_COMMIT=dec908d48facb6041c12b95b8ade64719a894917
+export LLVM_BRANCH=ot-llvm-21.1
+export LLVM_COMMIT=e5b282fd2541f3d1eb56b5b796b31aae3e37a293
 
 # Our Binutils fork with unratified bitmanip extensions
 export BINUTILS_URL=https://github.com/lowRISC/binutils.git
