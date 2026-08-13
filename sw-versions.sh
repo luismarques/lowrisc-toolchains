@@ -2,15 +2,17 @@
 
 # This documents the versions of any software checked out from git
 
-# LLVM 22.1.7 plus:
+# CHERIoT LLVM ~22.1.7 plus:
+# - llvmorg-22.1.7 merge commit
+# - Clang build fix
 # - `.option arch` with optional 0p93 suffix
 # - unratified bitmanip extensions
 # - jump guards
 # - revert D151768
 # - fix single byte counters for elided branches
-export LLVM_URL=https://github.com/luismarques/llvm-project.git
-export LLVM_BRANCH=ot-llvm-22.1.7
-export LLVM_COMMIT=fcd9a5cc9b85ce43ecb5f7fbe652217b82f297fe
+export LLVM_URL=https://github.com/lowRISC/llvm-project.git
+export LLVM_BRANCH=ot-cheriot-22.1.7
+export LLVM_COMMIT=1f8b4fb38c0e61c609abbbbcf7350efad45677c1
 
 # Our Binutils fork with unratified bitmanip extensions
 export BINUTILS_URL=https://github.com/lowRISC/binutils.git
